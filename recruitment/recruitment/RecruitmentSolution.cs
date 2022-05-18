@@ -12,25 +12,11 @@ namespace recruitment
             Record softwareEngineerVacancy = new Record("SoftwareEngineer0001", RecordType);
             Record frontEndEngineerVacancy = new Record("FrontEndEngineer0020", RecordType);
 
-            IRecruitmentService service = new Service();
-
             /**
             * Implement a logic of actions and invoke those actions below:
             */
 
-            // Invoke "Submit for Approval" for softwareEngineerVacancy
-            service.SubmitApproval(softwareEngineerVacancy);
-            // Invoke "Approve" for softwareEngineerVacancy
-            service.Approve(softwareEngineerVacancy);
-            // Invoke "Submit for Approval" for frontEndEngineerVacancy
-            service.SubmitApproval(frontEndEngineerVacancy);
-            // Invoke "Reject" for frontEndEngineerVacancy
-            service.Reject(frontEndEngineerVacancy);
-
-            // Console.ReadKey();
-            //==========================
-            Console.WriteLine("========service2==============");
-            var config = new ServiceConfiguration
+            var actionConfig = new ActionConfiguration
             {
                 ActionPerType = new Dictionary<string, IDictionary<string, string>>
                 {
@@ -43,20 +29,26 @@ namespace recruitment
                     }
                 }
             };
-            var service2 = new Service2(config);
-            service2.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
-            service2.ExecuteAction(softwareEngineerVacancy, "Approve");
-            service2.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
-            service2.ExecuteAction(frontEndEngineerVacancy, "Reject");
+            SubmitActionExecuter submitActionExecuter = new SubmitActionExecuter(actionConfig);
+            ApproveActionExecuter approveActionExecuter = new ApproveActionExecuter(actionConfig);
+            RejectActionExecuter rejectActionExecuter = new RejectActionExecuter(actionConfig);
 
-            Console.WriteLine("========service3==============");
-            var recruitmentExecuter = new RecruitmentExecuter(config);
-            var service3 = new Service3();
-            service3.RecruitmentExecuter = recruitmentExecuter;
-            service3.RecruitmentExecuter.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
-            service3.RecruitmentExecuter.ExecuteAction(softwareEngineerVacancy, "Approve");
-            service3.RecruitmentExecuter.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
-            service3.RecruitmentExecuter.ExecuteAction(frontEndEngineerVacancy, "Reject");
+            List<IActionExecuter> actionExecuters = new List<IActionExecuter>()
+            {
+                submitActionExecuter,
+                approveActionExecuter,
+                rejectActionExecuter
+            };
+
+            var service = new Service(actionExecuters);
+            // Invoke "Submit for Approval" for softwareEngineerVacancy
+            service.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
+            // Invoke "Approve" for softwareEngineerVacancy
+            service.ExecuteAction(softwareEngineerVacancy, "Approve");
+            // Invoke "Submit for Approval" for frontEndEngineerVacancy
+            service.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
+            // Invoke "Reject" for frontEndEngineerVacancy
+            service.ExecuteAction(frontEndEngineerVacancy, "Reject");
         }
 
         public class Record
@@ -70,107 +62,118 @@ namespace recruitment
             }
         }
 
-        public interface IRecruitmentService
+        public interface IActionExecuter
         {
-            void SubmitApproval(Record record);
-            void Approve(Record record);
-            void Reject(Record record);
-
+            public string ActionType { get; set; }
+            string GetActionResult(string recordType);
         }
 
-        public class Service : IRecruitmentService
+        public class SubmitActionExecuter : IActionExecuter
         {
-            public void SubmitApproval(Record record)
-            {
-                Console.WriteLine($"Submitted for approval Vacancy: {record.Id}");
-            }
-            public void Approve(Record record)
-            {
-                Console.WriteLine($"Approved Record: {record.Id}");
-            }
-            public void Reject(Record record)
-            {
-                Console.WriteLine($"Reject Record: {record.Id}");
-            }
+            public string ActionType { get; set; }
 
-        }
+            private ActionConfiguration _configuration { get; set; }
 
-        public class Service2
-        {
-            private ServiceConfiguration _configuration;
-
-            public Service2(ServiceConfiguration configuration)
+            public SubmitActionExecuter(ActionConfiguration configuration)
             {
+                ActionType = "SubmitForApproval";
+
                 _configuration = configuration;
             }
 
-            public void ExecuteAction(Record record, string action)
+            public string GetActionResult(string recordType)
             {
-                var actionResult = GetActionResult(action, record.Type);
-                Console.WriteLine($"{actionResult} {record.Type}: {record.Id}");
-            }
-
-            private string GetActionResult(string action, string type)
-            {
-                if (_configuration.ActionPerType.TryGetValue(type, out var actions) &&
-                    (actions.TryGetValue(action, out var result)))
+                if (_configuration.ActionPerType.TryGetValue(recordType, out var actions) &&
+                    (actions.TryGetValue(ActionType, out var result)))
                 {
                     return result;
                 }
 
-                throw new InvalidOperationException();
+                return "Submitted for approval ";
             }
         }
 
-        public class ServiceConfiguration
+        public class ApproveActionExecuter : IActionExecuter
+        {
+            public string ActionType { get; set; }
+            private ActionConfiguration _configuration { get; set; }
+
+            public ApproveActionExecuter(ActionConfiguration configuration)
+            {
+                ActionType = "Approve";
+
+                _configuration = configuration;
+            }
+
+            public string GetActionResult(string recordType)
+            {
+                if (_configuration.ActionPerType.TryGetValue(recordType, out var actions) &&
+                     (actions.TryGetValue(ActionType, out var result)))
+                {
+                    return result;
+                }
+
+                return "Approved ";
+            }
+        }
+
+        public class RejectActionExecuter : IActionExecuter
+        {
+            public string ActionType { get; set; }
+
+            private ActionConfiguration _configuration { get; set; }
+
+            public RejectActionExecuter(ActionConfiguration configuration)
+            {
+                ActionType = "Reject";
+
+                _configuration = configuration;
+            }
+
+            public string GetActionResult(string recordType)
+            {
+                if (_configuration.ActionPerType.TryGetValue(recordType, out var actions) &&
+                    (actions.TryGetValue(ActionType, out var result)))
+                {
+                    return result;
+                }
+
+                return "Rejected ";
+            }
+        }
+
+        public class ActionConfiguration
         {
             public IDictionary<string, IDictionary<string, string>> ActionPerType { get; set; }
         }
 
-        //=========================Service3==============
-        public class Service3
+        public class Service
         {
-            //private readonly IActionExecuter _recruitmentExecuter;
+            private List<IActionExecuter> _ationExecutersList = new List<IActionExecuter>();
 
-            //public Service3(IActionExecuter recruitmentExecuter)
-            //{
-            //    _recruitmentExecuter = recruitmentExecuter;
-            //}
-
-            public IActionExecuter RecruitmentExecuter { get; set; }
-        }
-
-        public interface IActionExecuter
-        {
-            void ExecuteAction(object obj, string action);
-        }
-
-        public class RecruitmentExecuter : IActionExecuter
-        {
-            private ServiceConfiguration _configuration;
-
-            public RecruitmentExecuter(ServiceConfiguration configuration)
+            public Service(List<IActionExecuter> ationExecutersList)
             {
-                _configuration = configuration;
-            }
-
-            public void ExecuteAction(object obj, string action)
-            {
-                Record record = (Record)obj;
-                var actionResult = GetActionResult(action, record.Type);
-                Console.WriteLine($"{actionResult} {record.Type}: {record.Id}");
-            }
-
-            private string GetActionResult(string action, string type)
-            {
-                if (_configuration.ActionPerType.TryGetValue(type, out var actions) &&
-                    (actions.TryGetValue(action, out var result)))
+                foreach (var item in ationExecutersList)
                 {
-                    return result;
+                    _ationExecutersList.Add(item);
                 }
 
-                throw new InvalidOperationException();
             }
+
+            public void ExecuteAction(Record record, string action)
+            {
+                foreach (var item in _ationExecutersList)
+                {
+                    if (item.ActionType.ToLower() == action.ToLower())
+                    {
+                        var actionResult = item.GetActionResult(record.Type);
+                        Console.WriteLine($"{actionResult} {record.Type}: {record.Id}");
+
+                        break;
+                    }
+                }
+            }
+
         }
     }
 }
