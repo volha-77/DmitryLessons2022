@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace recruitment
 {
@@ -73,7 +74,7 @@ namespace recruitment
         public interface IActionExecuter
         {
             public string ActionType { get; }
-            string GetActionResult(string recordType);
+            ActionResult GetActionResult(string recordType);
         }
 
         public class ActionExecuter : IActionExecuter
@@ -90,15 +91,25 @@ namespace recruitment
                 _configuration = configuration;
             }
 
-            public string GetActionResult(string recordType)
+            public ActionResult GetActionResult(string recordType)
             {
                 if (_configuration.ActionPerType.TryGetValue(recordType, out var actions) &&
                     (actions.TryGetValue(_actionType, out var result)))
                 {
-                    return result;
+                    return new ActionResult(result);
                 }
 
                 throw new InvalidOperationException();
+            }
+        }
+
+        public class ActionResult
+        {
+            public string TextResult { get; set; }
+
+            public ActionResult(string textResult)
+            {
+                TextResult = textResult;
             }
         }
 
@@ -106,12 +117,9 @@ namespace recruitment
         {
             private List<IActionExecuter> _ationExecutersList = new List<IActionExecuter>();
 
-            public Service(List<IActionExecuter> ationExecutersList)
+            public Service(IEnumerable<IActionExecuter> ationExecutersList)
             {
-                foreach (var item in ationExecutersList)
-                {
-                    _ationExecutersList.Add(item);
-                }
+                ationExecutersList.ToList().ForEach(x => _ationExecutersList.Add(x));
 
             }
 
@@ -122,7 +130,7 @@ namespace recruitment
                     if (item.ActionType.ToLower() == action.ToLower())
                     {
                         var actionResult = item.GetActionResult(record.Type);
-                        Console.WriteLine($"{actionResult} {record.Type}: {record.Id}");
+                        Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
 
                         break;
                     }
