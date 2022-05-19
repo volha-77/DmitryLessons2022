@@ -64,13 +64,13 @@ namespace recruitment
 
         public interface IActionExecuter
         {
-            public string ActionType { get; set; }
+            public string ActionType { get; }
             string GetActionResult(string recordType);
         }
 
         public class SubmitActionExecuter : IActionExecuter
         {
-            public string ActionType { get; set; }
+            public string ActionType { get; }
 
             private ActionConfiguration _configuration { get; set; }
 
@@ -95,7 +95,7 @@ namespace recruitment
 
         public class ApproveActionExecuter : IActionExecuter
         {
-            public string ActionType { get; set; }
+            public string ActionType { get; }
             private ActionConfiguration _configuration { get; set; }
 
             public ApproveActionExecuter(ActionConfiguration configuration)
@@ -119,7 +119,7 @@ namespace recruitment
 
         public class RejectActionExecuter : IActionExecuter
         {
-            public string ActionType { get; set; }
+            public string ActionType { get; }
 
             private ActionConfiguration _configuration { get; set; }
 
@@ -151,7 +151,7 @@ namespace recruitment
         {
             private List<IActionExecuter> _ationExecutersList = new List<IActionExecuter>();
 
-            public Service(List<IActionExecuter> ationExecutersList)
+            public Service(IEnumerable<IActionExecuter> ationExecutersList)
             {
                 foreach (var item in ationExecutersList)
                 {
