@@ -31,51 +31,32 @@ namespace recruitment
                 }
             };
 
-            Console.WriteLine("==============version 1=====================");
+            //version 1
+            SubmitActionExecuter submitActionExecuter = new SubmitActionExecuter(actionConfig);
+            ApproveActionExecuter approveActionExecuter = new ApproveActionExecuter(actionConfig);
+            //version 2
+            RecruitmentActionExecuter rejectActionExecuter = new RecruitmentActionExecuter("Reject", actionConfig);
 
-            SubmitActionExecuter submitActionExecuter1 = new SubmitActionExecuter(actionConfig);
-            ApproveActionExecuter approveActionExecuter1 = new ApproveActionExecuter(actionConfig);
-            RejectActionExecuter rejectActionExecuter1 = new RejectActionExecuter(actionConfig);
 
-            List<IActionExecuter> actionExecuters1 = new List<IActionExecuter>()
+            List<IActionExecuter> actionExecuters = new List<IActionExecuter>()
             {
-                submitActionExecuter1,
-                approveActionExecuter1,
-                rejectActionExecuter1
+                submitActionExecuter,
+                approveActionExecuter,
+                rejectActionExecuter
             };
 
-            var service1 = new Service(actionExecuters1);
+            var service = new Service(actionExecuters);
             // Invoke "Submit for Approval" for softwareEngineerVacancy
-            service1.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
+            service.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
             // Invoke "Approve" for softwareEngineerVacancy
-            service1.ExecuteAction(softwareEngineerVacancy, "Approve");
+            service.ExecuteAction(softwareEngineerVacancy, "Approve");
             // Invoke "Submit for Approval" for frontEndEngineerVacancy
-            service1.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
+            service.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
             // Invoke "Reject" for frontEndEngineerVacancy
-            service1.ExecuteAction(frontEndEngineerVacancy, "Reject");
+            service.ExecuteAction(frontEndEngineerVacancy, "Reject");
 
-            Console.WriteLine("==============version 2=====================");
-            RecruitmentActionExecuter submitActionExecuter2 = new RecruitmentActionExecuter("SubmitForApproval", actionConfig);
-            RecruitmentActionExecuter approveActionExecuter2 = new RecruitmentActionExecuter("Approve", actionConfig);
-            RecruitmentActionExecuter rejectActionExecuter2 = new RecruitmentActionExecuter("Reject", actionConfig);
+            service.ExecuteAction(frontEndEngineerVacancy, "111");
 
-            List<IActionExecuter> actionExecuters2 = new List<IActionExecuter>()
-            {
-                submitActionExecuter2,
-                approveActionExecuter2,
-                rejectActionExecuter2
-            };
-
-
-            var service2 = new Service(actionExecuters2);
-            // Invoke "Submit for Approval" for softwareEngineerVacancy
-            service2.ExecuteAction(softwareEngineerVacancy, "SubmitForApproval");
-            // Invoke "Approve" for softwareEngineerVacancy
-            service2.ExecuteAction(softwareEngineerVacancy, "Approve");
-            // Invoke "Submit for Approval" for frontEndEngineerVacancy
-            service2.ExecuteAction(frontEndEngineerVacancy, "SubmitForApproval");
-            // Invoke "Reject" for frontEndEngineerVacancy
-            service2.ExecuteAction(frontEndEngineerVacancy, "Reject");
         }
 
         public class Record
@@ -98,9 +79,13 @@ namespace recruitment
         {
             public string TextResult { get; set; }
 
-            public ActionResult(string textResult)
+            public bool Result;
+
+            public ActionResult(string textResult, bool result = true)
             {
                 TextResult = textResult;
+
+                Result = result;
             }
         }
 
@@ -209,32 +194,27 @@ namespace recruitment
                     return new ActionResult(result);
                 }
 
-                throw new InvalidOperationException();
+                return new ActionResult(new InvalidOperationException().Message, false);
             }
         }
 
         //class servise
         public class Service
         {
-            private List<IActionExecuter> _actionExecutersList = new List<IActionExecuter>();
+            private List<IActionExecuter> _actionExecutersList;
 
             public Service(IEnumerable<IActionExecuter> ationExecutersList)
             {
-                ationExecutersList.ToList().ForEach(x => _actionExecutersList.Add(x));
-
+                _actionExecutersList = ationExecutersList.ToList();
             }
 
             public void ExecuteAction(Record record, string action)
             {
-                foreach (var item in _actionExecutersList)
+                var executer = _actionExecutersList.Find(x => x.ActionType.ToLower() == action.ToLower());
+                if (executer != null)
                 {
-                    if (item.ActionType.ToLower() == action.ToLower())
-                    {
-                        var actionResult = item.GetActionResult(record.Type);
-                        Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
-
-                        break;
-                    }
+                    var actionResult = executer.GetActionResult(record.Type);
+                    Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
                 }
             }
 
