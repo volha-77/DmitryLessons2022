@@ -194,7 +194,9 @@ namespace recruitment
                     return new ActionResult(result);
                 }
 
-                return new ActionResult(new InvalidOperationException().Message, false);
+                //return new ActionResult(new InvalidOperationException().Message, false);
+
+                return new ActionResult("", false);
             }
         }
 
@@ -214,7 +216,11 @@ namespace recruitment
                 if (executer != null)
                 {
                     var actionResult = executer.GetActionResult(record.Type);
-                    Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
+                    if (actionResult.Result)
+                    {
+                        Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
+                    }
+                    else Console.WriteLine($"Action failed");
                 }
             }
 
