@@ -220,7 +220,7 @@ namespace recruitment
                     {
                         Console.WriteLine($"{actionResult.TextResult} {record.Type}: {record.Id}");
                     }
-                    else Console.WriteLine($"Action failed");
+                    else Console.WriteLine("Action failed");
                 }
             }
 
