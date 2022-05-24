@@ -17,20 +17,10 @@ namespace intLists
             //enhanced task
             //** try to come up with solution wich doesn't use set data structure
 
-            var listResult = FindDifference(first, second);
-            listResult.Sort();
+            int[] result = FindDifference(first, second);
+            Array.Sort(result);
 
-            string stringResult = ("[");
-            //foreach (var item in listResult)
-            //{
-            //    if (stringResult.Length > 1) stringResult = stringResult + ",";
-            //    stringResult = stringResult + item.ToString();
-            //}
-
-            stringResult = $"[{string.Join(",", listResult)}]";
-
-            //stringResult = stringResult + "]";
-
+            string stringResult = $"[{string.Join(",", result)}]";
 
             Console.WriteLine(stringResult);
 
@@ -38,31 +28,42 @@ namespace intLists
 
         }
 
-        static List<int> FindDifference(ICollection<int> firstCollection, ICollection<int> secondCollection)
+        static int[] FindDifference(int[] firstCollection, int[] secondCollection)
+        {
+            int[] firstResult = CompaireOneCollectionToAnother(firstCollection, secondCollection);
+
+            int[] secondResult = CompaireOneCollectionToAnother(secondCollection, firstCollection);
+
+            int[] result = new int[firstResult.Length + secondResult.Length];
+
+            firstResult.CopyTo(result, 0);
+            secondResult.CopyTo(result, firstResult.Length);
+
+            return result;
+        }
+
+        static int[] CompaireOneCollectionToAnother(int[] firstCollection, int[] secondCollection)
         {
             List<int> listResult = new List<int>();
 
-            CompaireOneCollectionToAnother(firstCollection, secondCollection, listResult);
+            IDictionary<int, bool> searchDictForSecond = new Dictionary<int, bool>();
 
-            CompaireOneCollectionToAnother(secondCollection, firstCollection, listResult);
-
-            return listResult;
-        }
-
-        static void CompaireOneCollectionToAnother(ICollection<int> firstCollection, ICollection<int> secondCollection, List<int> listResult)
-        {
+            foreach (var itemSecond in secondCollection)
+            {
+              if (!searchDictForSecond.ContainsKey(itemSecond)) searchDictForSecond.Add(itemSecond, false);
+            }
 
             foreach (var itemFirst in firstCollection)
             {
-                bool isFound = false;
-                foreach (var itemSecond in secondCollection)
+                if (!searchDictForSecond.TryGetValue(itemFirst, out bool isFound))
                 {
-                    if (itemFirst == itemSecond) isFound = true;
+                    listResult.Add(itemFirst);
+                    if (!searchDictForSecond.ContainsKey(itemFirst)) searchDictForSecond.Add(itemFirst, true);
                 }
 
-                if ((!isFound) && (!listResult.Contains(itemFirst))) listResult.Add(itemFirst);
             }
 
+            return listResult.ToArray();
 
         }
     }
