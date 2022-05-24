@@ -205,14 +205,21 @@ namespace recruitment
         {
             private List<IActionExecuter> _actionExecutersList;
 
+            private IDictionary<string, IActionExecuter> _searchDict = new Dictionary<string, IActionExecuter>();
+
             public Service(IEnumerable<IActionExecuter> ationExecutersList)
             {
                 _actionExecutersList = ationExecutersList.ToList();
+                foreach (IActionExecuter item in _actionExecutersList)
+                {
+                    _searchDict.Add(item.ActionType, item);
+                }
             }
 
             public void ExecuteAction(Record record, string action)
             {
-                var executer = _actionExecutersList.Find(x => x.ActionType.ToLower() == action.ToLower());
+                _searchDict.TryGetValue(action, out var executer);
+              //  var executer = _actionExecutersList.Find(x => x.ActionType.ToLower() == action.ToLower());
                 if (executer != null)
                 {
                     var actionResult = executer.GetActionResult(record.Type);
