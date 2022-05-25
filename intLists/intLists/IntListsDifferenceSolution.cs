@@ -47,16 +47,17 @@ namespace intLists
         {
             List<int> listResult = new List<int>();
 
-            IDictionary<int, bool> searchDictForSecond = new Dictionary<int, bool>();
-            foreach (var itemSecond in secondCollection.Where(itemSecond => !searchDictForSecond.ContainsKey(itemSecond)))
+            HashSet<int> searchForSecond = new HashSet<int>();
+
+            foreach (var itemSecond in secondCollection)
             {
-                searchDictForSecond.Add(itemSecond, false);
+                searchForSecond.Add(itemSecond);
             }
 
-            foreach (var itemFirst in firstCollection.Where(itemFirst => !searchDictForSecond.TryGetValue(itemFirst, out bool isFound)))
+            foreach (var itemFirst in firstCollection.Where(itemFirst => !searchForSecond.Contains(itemFirst)))
             {
                 listResult.Add(itemFirst);
-                if (!searchDictForSecond.ContainsKey(itemFirst)) searchDictForSecond.Add(itemFirst, true);
+                searchForSecond.Add(itemFirst);
             }
 
             return listResult.ToArray();
