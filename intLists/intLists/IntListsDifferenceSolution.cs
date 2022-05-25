@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace intLists
 {
@@ -47,20 +48,15 @@ namespace intLists
             List<int> listResult = new List<int>();
 
             IDictionary<int, bool> searchDictForSecond = new Dictionary<int, bool>();
-
-            foreach (var itemSecond in secondCollection)
+            foreach (var itemSecond in secondCollection.Where(itemSecond => !searchDictForSecond.ContainsKey(itemSecond)))
             {
-              if (!searchDictForSecond.ContainsKey(itemSecond)) searchDictForSecond.Add(itemSecond, false);
+                searchDictForSecond.Add(itemSecond, false);
             }
 
-            foreach (var itemFirst in firstCollection)
+            foreach (var itemFirst in firstCollection.Where(itemFirst => !searchDictForSecond.TryGetValue(itemFirst, out bool isFound)))
             {
-                if (!searchDictForSecond.TryGetValue(itemFirst, out bool isFound))
-                {
-                    listResult.Add(itemFirst);
-                    if (!searchDictForSecond.ContainsKey(itemFirst)) searchDictForSecond.Add(itemFirst, true);
-                }
-
+                listResult.Add(itemFirst);
+                if (!searchDictForSecond.ContainsKey(itemFirst)) searchDictForSecond.Add(itemFirst, true);
             }
 
             return listResult.ToArray();
