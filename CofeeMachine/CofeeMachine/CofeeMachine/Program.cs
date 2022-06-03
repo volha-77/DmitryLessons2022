@@ -22,9 +22,16 @@ namespace CofeeMachine
 
     public class CofeeMachine: ICofeeMachine
     {
-        public List<DrinkType> AvailableDrinkTypes { get; set; }
+        // public List<DrinkType> AvailableDrinkTypes { get; set; }
 
-        public IDictionary<Ingredient, double> AvailableIngredients { get; set; }
+        public List<Drink> AvailableDrinks { get; set; }
+
+        public void AddMilk(double milk)
+        {
+
+        }
+
+        private IDictionary<Ingredient, double> availableIngredients { get; set; }
 
         public IDictionary<Ingredient, double> SpentIngredients { get; }
 
@@ -33,7 +40,7 @@ namespace CofeeMachine
             AvailableDrinkTypes = drinkTypes;
         }
 
-        public Drink? MakeDrink(DrinkType drinkType)
+        public Drink MakeDrink(DrinkType drinkType)
         {
             if (AvailableDrinkTypes.Contains(drinkType))
             {
@@ -61,14 +68,14 @@ namespace CofeeMachine
 
     public class Drink
     {
-        public DrinkType Name { get; set; }
+        public string Name { get; }
 
         public double Volume { get; set; }
 
         public IDictionary<Ingredient, double> Ingredients;
         public double Price { get; set; }
 
-        public Drink(DrinkType name)
+        public Drink(string name)
         {
             Name = name;
         }
