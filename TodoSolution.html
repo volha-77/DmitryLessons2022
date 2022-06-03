@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo</title>
+
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            font-family: Calibri;
+            color: white;
+        }
+
+        .todo {
+            height: 100%;
+            overflow-x: auto;
+            background: darkslateblue;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .todo .todo-canvas {
+            margin: 1rem;
+            width: 300px;
+        }
+
+        .todo .todo-list {
+            background: slateblue;
+            border-radius: 5px;
+            padding: 1rem;
+        }
+
+        .todo .todo-header {
+            padding: 1rem;
+            display: flex;
+            align-items: end;
+        }
+
+        .todo .todo-button {
+            cursor: pointer;
+
+            color: white;
+            width: 50px;
+            height: 50px;
+            font-size: 2rem;
+            border-radius: 50%;
+            border: 0;
+            -webkit-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-button:hover {
+            -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-button.todo-button-add {
+            background: blue;
+
+        }
+
+        .todo .todo-button.todo-button-add:hover {
+            background: mediumblue;
+        }
+
+        .todo .todo-button.todo-button-delete {
+            width: 25px;
+            height: 25px;
+            background: red;
+            font-size: 1rem;
+        }
+
+        .todo .todo-button.todo-button-delete:hover {
+            background: darkred;
+        }
+
+        .todo .todo-card {
+            display: flex;
+            flex-direction: column;
+
+            padding: 1rem;
+            margin: 1rem 0;
+
+            border-radius: 5px;
+            -webkit-box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-card .label,
+        .todo .todo-card .save {
+            width: 100%;
+        }
+
+        .todo .todo-card .label,
+        .todo .todo-card .content,
+        .todo .todo-card .save {
+            font-size: 1rem;
+            margin: .5rem 0;
+            padding: .25rem 0;
+        }
+    </style>
+</head>
+<body>
+    <p style="text-align: center"><button  onclick="clearLocalStorage()">Очистить storage</button></p>
+
+<div class="todo">
+    <div class="todo-canvas">
+
+        <div class="todo-header">
+            <button class="todo-button todo-button-add" id="todo-button-add" onclick="addToDo()">+</button>
+        </div>
+        <div class="todo-list" id="todoList">
+            <!-- <div class="todo-card" id="card-1">
+                <label class="label">Content</label>
+                <input class="content" type="text" onkeypress="return editToDo(event, 'card-1')"/>
+                <button onclick="delToDo('card-1')">delete</button>
+            </div> -->
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+var n = 1;
+
+window.onload = function() 
+    {   
+        var cards = getFromLocalStorage();
+
+        renderCards(cards);
+    }
+    
+function getFromLocalStorage()
+{
+    var localStorage = window.localStorage;
+
+    var cards = JSON.parse (localStorage.getItem('cards'));
+    if (!cards) 
+    {
+        var card = {id: crypto.randomUUID(), content: 'Content'};
+       
+        cards = [card];
+        localStorage.setItem('cards', JSON.stringify(cards));    
+    }
+
+    return cards;
+}
+
+function saveInLocalStorage(cards)
+{
+    localStorage = window.localStorage;
+    localStorage.setItem('cards', JSON.stringify(cards));
+}
+
+
+function clearLocalStorage()
+{
+    localStorage = window.localStorage;
+    localStorage.clear();
+}
+
+function renderCards(cards)
+{
+    for (var i=0; i<cards.length;i++)
+    {
+        renderCard(cards[i]);
+    }
+}
+
+function renderCard(card)
+{
+    var todoList = document.getElementById("todoList");
+    
+    cardElement = document.createElement("div");
+    cardElement.setAttribute("class", "todo-card");
+    cardElement.setAttribute("id", card.id);
+
+    cardElement.innerHTML = `<label class="label">${card.content}</label>
+                <input class="content" type="text" onkeypress="return editToDo(event, '${card.id}')"/>
+                <button onclick="delToDo('${card.id}')">delete</button>`;
+ 
+    todoList.appendChild(cardElement);
+}
+
+function addToDo()
+{
+    cards = getFromLocalStorage();
+    var card = {id:  crypto.randomUUID(), content: "Content"};
+
+    renderCard(card);
+    cards.push(card)
+    saveInLocalStorage(cards);
+}
+
+  function delToDo(cardId)
+  {
+    var cardElement = document.getElementById(cardId);
+    var todoList = document.getElementById("todoList");
+    //last card don't delete, only clear content
+    if (todoList.querySelectorAll('div').length == 1) 
+    {
+        content = cardElement.querySelector('label'); 
+        if (content.innerHTML != 'Content')  
+        content.innerHTML = 'Content';
+        return false;
+    }  
+   
+    todoList.removeChild(cardElement);
+
+    var cards = getFromLocalStorage();
+    var card = cards.find(card => card.id === cardId);
+    var indx = cards.indexOf(card);
+    cards.splice(indx, 1)
+    saveInLocalStorage(cards);    
+    return true;
+  }
+  
+function editToDo(e, cardId) {
+    //if press enter, text is saved in content
+    if (e.keyCode == 13)
+    {
+        var cardElement = document.getElementById(cardId);
+        inputEl = cardElement.querySelector('input');
+        inputText = inputEl.value;
+
+        //check on empty string
+        if (!validateInput(inputEl)) return false;
+        
+        content = cardElement.querySelector('label');
+        
+        content.innerHTML = inputText;
+        inputEl.value = "";
+
+        var cards = getFromLocalStorage();
+        var card = cards.find(card => card.id === cardId);
+        var indx = cards.indexOf(card);
+        card.content = inputText;
+        cards[indx] = card;
+        saveInLocalStorage(cards);
+        return true;
+    }
+}
+
+
+
+  function validateInput(inputEl)
+    {
+        let inputValue = inputEl.value;
+        if (inputValue.trim() == "") 
+        {
+            alert("input text can not be empty!");
+            return false;
+        }
+
+        return true;
+    }
+</script>
+</body>
+</html>
