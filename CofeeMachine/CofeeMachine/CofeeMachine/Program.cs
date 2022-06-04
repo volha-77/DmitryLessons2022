@@ -7,96 +7,144 @@ namespace CofeeMachine
     {
         static void Main(string[] args)
         {
-            List<DrinkType> drinkTypes = new List<DrinkType>
+            var espressoIngredients = new Dictionary<Ingredient, double>
+                {
+                {Ingredient.water, 30},
+                {Ingredient.cofee, 15},
+                {Ingredient.sugar, 0},
+                };
+
+            Drink cappucino = new Drink("Cappuccino");
+
+            Drink americano = new Drink("Americano");
+            Drink espresso = new Drink("Espresso", espressoIngredients);
+
+            List<Drink> drinks = new List<Drink>
             {
-                DrinkType.cappucino,
-                DrinkType.espesso,
-                DrinkType.americano
+               cappucino,
+               americano,
+               espresso
             };
-            CofeeMachine cofeeMachine = new CofeeMachine(drinkTypes);
-            var capuc = cofeeMachine.MakeDrink(DrinkType.cappucino);
+            CofeeMachine cofeeMachine = new CofeeMachine(drinks);
+            cofeeMachine.AddIngredient(Ingredient.cofee, 1000);
+            cofeeMachine.AddIngredient(Ingredient.water, 20000);
+           // cofeeMachine.AddIngredient(Ingredient.milk, 20000);
+            cofeeMachine.AddIngredient(Ingredient.sugar, 2000);
 
-            if (capuc == null) throw new InvalidOperationException();
+            var esp = cofeeMachine.MakeDrink(espresso);
+
         }
     }
 
-    public class CofeeMachine: ICofeeMachine
+    public class CofeeMachine
     {
-        // public List<DrinkType> AvailableDrinkTypes { get; set; }
-
-        public List<Drink> AvailableDrinks { get; set; }
-
-        public void AddMilk(double milk)
-        {
-
-        }
-
-        private IDictionary<Ingredient, double> availableIngredients { get; set; }
-
+        public List<Drink> AvailableDrinks { get; }
+        public IDictionary<Ingredient, double> AvailableIngredients { get; }
         public IDictionary<Ingredient, double> SpentIngredients { get; }
-
-        public CofeeMachine(List<DrinkType> drinkTypes)
+        public CofeeMachine(List<Drink> drinks)
         {
-            AvailableDrinkTypes = drinkTypes;
-        }
+            AvailableDrinks = drinks;
+            AvailableIngredients = new Dictionary<Ingredient, double> { {Ingredient.sugar, 0 } };
+            SpentIngredients = new Dictionary<Ingredient, double> { { Ingredient.sugar, 0 } };
 
-        public Drink MakeDrink(DrinkType drinkType)
-        {
-            if (AvailableDrinkTypes.Contains(drinkType))
+            foreach (var drink in AvailableDrinks)
             {
-                Console.WriteLine($"Your {drinkType.ToString()} is ready");
+                if (drink.Ingredients != null)
+                foreach (var portion in drink.Ingredients)
+                {
+                    if (!AvailableIngredients.ContainsKey(portion.Key))
+                        AvailableIngredients.Add(portion.Key, 0);
+                    if (!SpentIngredients.ContainsKey(portion.Key))
+                        SpentIngredients.Add(portion.Key, 0);
+                }
 
-                return new Drink(drinkType);
             }
-            else return null;
         }
-    }
+        public void AddIngredient(Ingredient ingredient, double quatity)
+        {
+            if (AvailableIngredients.ContainsKey(ingredient))
+            {
+                AvailableIngredients[ingredient] += quatity;
+            }
+            else
+               throw new InvalidOperationException("wrong ingredient!!!");
+        }
+        public CupOfDrink MakeDrink(Drink drink)
+        {
+            if (AvailableDrinks.Contains(drink) && drink.Ingredients != null)
+            {
+                //check if all drink ingredietns are in machine 
+                foreach (var portion in drink.Ingredients)
+                {
+                    if (AvailableIngredients.TryGetValue(portion.Key, out double quantity))
+                    {
+                        if (portion.Value > quantity) throw new InvalidOperationException($"[{portion.Key} is out]");
+                    }
+                    else throw new InvalidOperationException($"[{portion.Key} is wrong ingredient]");
+                }
 
-    public class Ingredient
-    {
-        public string Name { get; set; }
-        public double Price { get; set; }
-        public Units Unit { get; set; }
+                //update state of the machine 
+                foreach (var portion in drink.Ingredients)
+                {
+                    AvailableIngredients[portion.Key] -= portion.Value;
+                    SpentIngredients[portion.Key] += portion.Value;
+                }
 
-    }
+                Console.WriteLine($"Your {drink.Name} is ready");
 
-    public enum Units
-    {
-        liter,
-        kg,
+                return new CupOfDrink(drink);
+            }
+            else throw new InvalidOperationException();
+        }
     }
 
     public class Drink
     {
         public string Name { get; }
 
-        public double Volume { get; set; }
-
         public IDictionary<Ingredient, double> Ingredients;
-        public double Price { get; set; }
 
         public Drink(string name)
         {
             Name = name;
         }
+        public Drink(string name, IDictionary<Ingredient, double> ingredients) : this(name)
+        {
+            Ingredients = ingredients;
+        }
     }
+
+    public class CupOfDrink
+    {
+        private Drink _drink { get; }
+
+        public double Price { get; set; }
+
+        public CupOfDrink(Drink drink)
+        {
+            _drink = drink;
+        }
+    }
+
 
     public interface ICofeeMachine
     {
-        List<DrinkType> AvailableDrinkTypes { get; set; }
+        List<Drink> AvailableDrinks { get; set; }
 
-        IDictionary<Ingredient, double> AvailableIngredients { get; set; }
+        //IDictionary<Ingredient, double> AvailableIngredients { get; set; }
 
-        IDictionary<Ingredient, double> SpentIngredients { get; }
+        //IDictionary<Ingredient, double> SpentIngredients { get; }
 
-        public Drink MakeDrink(DrinkType drinkType);
+        public CupOfDrink MakeDrink(Drink drink);
     }
 
-    public enum DrinkType
+
+    public enum Ingredient
     {
-        espesso,
-        cappucino,
-        americano,
-        glace
+        milk,
+        water,
+        cofee,
+        sugar
     }
+
 }
