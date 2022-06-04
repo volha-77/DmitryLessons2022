@@ -36,7 +36,7 @@ namespace CofeeMachine
         }
     }
 
-    public class CofeeMachine
+    public class CofeeMachine: ICofeeMachine
     {
         public List<Drink> AvailableDrinks { get; }
         public IDictionary<Ingredient, double> AvailableIngredients { get; }
@@ -129,12 +129,11 @@ namespace CofeeMachine
 
     public interface ICofeeMachine
     {
-        List<Drink> AvailableDrinks { get; set; }
+        public List<Drink> AvailableDrinks { get; }
+        public IDictionary<Ingredient, double> AvailableIngredients { get; }
+        public IDictionary<Ingredient, double> SpentIngredients { get; }
 
-        //IDictionary<Ingredient, double> AvailableIngredients { get; set; }
-
-        //IDictionary<Ingredient, double> SpentIngredients { get; }
-
+        public void AddIngredient(Ingredient ingredient, double quatity);
         public CupOfDrink MakeDrink(Drink drink);
     }
 
