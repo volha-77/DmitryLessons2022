@@ -127,7 +127,8 @@
 </div>
 
 <script type="text/javascript">
-var n = 1;
+
+  const content = 'Content';
 
 window.onload = function() 
     {   
@@ -143,7 +144,7 @@ function getFromLocalStorage()
     var cards = JSON.parse (localStorage.getItem('cards'));
     if (!cards) 
     {
-        var card = {id: crypto.randomUUID(), content: 'Content'};
+        var card = {id: crypto.randomUUID(), content: content};
        
         cards = [card];
         localStorage.setItem('cards', JSON.stringify(cards));    
@@ -191,7 +192,7 @@ function renderCard(card)
 function addToDo()
 {
     cards = getFromLocalStorage();
-    var card = {id:  crypto.randomUUID(), content: "Content"};
+    var card = {id:  crypto.randomUUID(), content: content};
 
     renderCard(card);
     cards.push(card)
@@ -205,17 +206,18 @@ function addToDo()
     //last card don't delete, only clear content
     if (todoList.querySelectorAll('div').length == 1) 
     {
-        content = cardElement.querySelector('label'); 
-        if (content.innerHTML != 'Content')  
-        content.innerHTML = 'Content';
+        var contentEl = cardElement.querySelector('label'); 
+        if (contentEl.innerHTML != content)  
+        contentEl.innerHTML = content;
         return false;
     }  
    
     todoList.removeChild(cardElement);
 
     var cards = getFromLocalStorage();
-    var card = cards.find(card => card.id === cardId);
-    var indx = cards.indexOf(card);
+    // var card = cards.find(card => card.id === cardId);
+    // var indx = cards.indexOf(card);
+    var indx = cards.findIndex(card => card.id == cardId);
     cards.splice(indx, 1)
     saveInLocalStorage(cards);    
     return true;
@@ -232,14 +234,15 @@ function editToDo(e, cardId) {
         //check on empty string
         if (!validateInput(inputEl)) return false;
         
-        content = cardElement.querySelector('label');
+        var contentEl = cardElement.querySelector('label');
         
-        content.innerHTML = inputText;
+        contentEl.innerHTML = inputText;
         inputEl.value = "";
 
         var cards = getFromLocalStorage();
-        var card = cards.find(card => card.id === cardId);
-        var indx = cards.indexOf(card);
+        // var card = cards.find(card => card.id === cardId);
+        // var indx = cards.indexOf(card);
+        var indx = cards.findIndex(card => card.id == cardId);
         card.content = inputText;
         cards[indx] = card;
         saveInLocalStorage(cards);
