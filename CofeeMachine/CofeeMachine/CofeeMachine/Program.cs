@@ -27,11 +27,11 @@ namespace CofeeMachine
                espresso
             };
 
-            var availableIngredients = new Dictionary<Ingredient, MaxCurrent>
+            var availableIngredients = new Dictionary<Ingredient, Tank>
             {
-                {Ingredient.Cofee, new MaxCurrent{max = 5000} },
-                {Ingredient.Water, new MaxCurrent{max = 25000} },
-                {Ingredient.Sugar, new MaxCurrent{max = 7000} }
+                {Ingredient.Cofee, new Tank{max = 5000} },
+                {Ingredient.Water, new Tank{max = 25000} },
+                {Ingredient.Sugar, new Tank{max = 7000} }
             };
 
             CofeeMachine cofeeMachine = new CofeeMachine(drinks, availableIngredients);
@@ -48,7 +48,7 @@ namespace CofeeMachine
     public class CofeeMachine : ICofeeMachine
     {
         public List<Drink> AvailableDrinks { get; }
-        public IDictionary<Ingredient, MaxCurrent> AvailableIngredients { get; }
+        public IDictionary<Ingredient, Tank> AvailableIngredients { get; }
 
         public IDictionary<Ingredient, double> SpentIngredients { get; }
         public CofeeMachine(IList<Drink> drinks)
@@ -56,50 +56,64 @@ namespace CofeeMachine
             AvailableDrinks = drinks.ToList();
 
             SpentIngredients = new Dictionary<Ingredient, double> { { Ingredient.Sugar, 0 } };
-            AvailableIngredients = new Dictionary<Ingredient, MaxCurrent> { { Ingredient.Sugar, new MaxCurrent { max = 10000 } } };
-
-            foreach (var drink in AvailableDrinks)
+            AvailableIngredients = new Dictionary<Ingredient, Tank> { { Ingredient.Sugar, new Tank { max = 10000 } } };
+            foreach (var portion in AvailableDrinks.Where(drink => drink.Ingredients != null).SelectMany(drink => drink.Ingredients))
             {
-                if (drink.Ingredients != null)
-                    foreach (var portion in drink.Ingredients)
-                    {
-                        if (!AvailableIngredients.ContainsKey(portion.Key))
-                            AvailableIngredients.Add(portion.Key, new MaxCurrent { max = 10000 });
-
-                        if (!SpentIngredients.ContainsKey(portion.Key))
-                            SpentIngredients.Add(portion.Key, 0);
-                    }
-
+                if (!AvailableIngredients.ContainsKey(portion.Key))
+                    AvailableIngredients.Add(portion.Key, new Tank { max = 10000 });
+                if (!SpentIngredients.ContainsKey(portion.Key))
+                    SpentIngredients.Add(portion.Key, 0);
             }
+
+            //foreach (var drink in AvailableDrinks)
+            //{
+            //    if (drink.Ingredients != null)
+            //        foreach (var portion in drink.Ingredients)
+            //        {
+            //            if (!AvailableIngredients.ContainsKey(portion.Key))
+            //                AvailableIngredients.Add(portion.Key, new Tank { max = 10000 });
+
+            //            if (!SpentIngredients.ContainsKey(portion.Key))
+            //                SpentIngredients.Add(portion.Key, 0);
+            //        }
+
+            //}
         }
 
-        public CofeeMachine(IList<Drink> drinks, IDictionary<Ingredient, MaxCurrent> availableIngredients) : this(drinks)
+        public CofeeMachine(IList<Drink> drinks, IDictionary<Ingredient, Tank> availableIngredients) : this(drinks)
         {
             AvailableIngredients = availableIngredients;
-
-            foreach (var drink in AvailableDrinks)
+            foreach (var (drink, portion) in AvailableDrinks.Where(drink => drink.Ingredients != null)
+                .SelectMany(drink => drink.Ingredients
+                .Where(portion => !AvailableIngredients.ContainsKey(portion.Key))
+                .Select(portion => (drink, portion))))
             {
-                if (drink.Ingredients != null)
-                    foreach (var portion in drink.Ingredients)
-                    {
-                        if (!AvailableIngredients.ContainsKey(portion.Key))
-                            throw new InvalidOperationException($"Ingredient {portion.Key} in {drink.Name} doesn't match this machine!");
-                    }
-
+                throw new InvalidOperationException($"Ingredient {portion.Key} in {drink.Name} doesn't match this machine!");
             }
+
+            //foreach (var drink in AvailableDrinks)
+            //{
+            //    if (drink.Ingredients != null)
+            //        foreach (var portion in drink.Ingredients)
+            //        {
+            //            if (!AvailableIngredients.ContainsKey(portion.Key))
+            //                throw new InvalidOperationException($"Ingredient {portion.Key} in {drink.Name} doesn't match this machine!");
+            //        }
+
+            //}
         }
         public void AddIngredient(Ingredient ingredient, double quatity)
         {
             if (AvailableIngredients.ContainsKey(ingredient))
             {
-                var maxCurrent = AvailableIngredients[ingredient];
-                if (maxCurrent.max >= maxCurrent.current + quatity)
+                var tank = AvailableIngredients[ingredient];
+                if (tank.max >= tank.current + quatity)
                 {
-                    maxCurrent.current += quatity;
-                    AvailableIngredients[ingredient] = maxCurrent;
+                    tank.current += quatity;
+                    AvailableIngredients[ingredient] = tank;
                 }
                 else
-                    throw new InvalidOperationException($"Invalid operation: max quantity of {ingredient} is {maxCurrent.max}!!!");
+                    throw new InvalidOperationException($"Invalid operation: max quantity of {ingredient} is {tank.max}!!!");
             }
             else
                 throw new InvalidOperationException("Wrong ingredient!!!");
@@ -111,9 +125,9 @@ namespace CofeeMachine
                 //check if all drink ingredietns are in machine 
                 foreach (var portion in drink.Ingredients)
                 {
-                    if (AvailableIngredients.TryGetValue(portion.Key, out MaxCurrent maxCurrent))
+                    if (AvailableIngredients.TryGetValue(portion.Key, out Tank tank))
                     {
-                        if (portion.Value > maxCurrent.current) throw new InvalidOperationException($"[{portion.Key} is out]");
+                        if (portion.Value > tank.current) throw new InvalidOperationException($"[{portion.Key} is out]");
                     }
                     else throw new InvalidOperationException($"[{portion.Key} is wrong ingredient]");
                 }
@@ -168,14 +182,14 @@ namespace CofeeMachine
     public interface ICofeeMachine
     {
         public List<Drink> AvailableDrinks { get; }
-        public IDictionary<Ingredient, MaxCurrent> AvailableIngredients { get; }
+        public IDictionary<Ingredient, Tank> AvailableIngredients { get; }
         public IDictionary<Ingredient, double> SpentIngredients { get; }
 
         public void AddIngredient(Ingredient ingredient, double quatity);
         public CupOfDrink MakeDrink(Drink drink);
     }
 
-    public struct MaxCurrent
+    public struct Tank
     {
         internal double max;
         internal double current;
