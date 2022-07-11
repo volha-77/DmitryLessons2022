@@ -114,16 +114,10 @@
 
     <div class="todo">
         <div class="todo-canvas">
-
             <div class="todo-header">
                 <button class="todo-button todo-button-add" id="todo-button-add">+</button>
             </div>
             <div class="todo-list" id="todoList">
-                <!-- <div class="todo-card" id="card-1">
-                <label class="label">Content</label>
-                <input class="content" type="text" onkeypress="return editToDo(event, 'card-1')"/>
-                <button onclick="delToDo('card-1')">delete</button>
-            </div> -->
             </div>
         </div>
 
@@ -131,51 +125,50 @@
 
     <script type="text/javascript">
 
-        const content = 'Content';
-
-
         window.onload = function () {
             let controller = new Controller();
             controller.init();
         }
 
-        //controller
+        class Constants {
+            static ContentText = 'Content';
+        }
+
+        // Controller
         class Controller {
-            cards;
+
             constructor() {
+                this.cards = [];
                 this.localStorage = new LocalStorageCompClass();
                 this.renderComp = new RenderCompClass(this.localStorage);
             }
 
+            createViewModel(dataModel) {
+                return {
+                    id: dataModel.id,
+                    content: dataModel.content,
+                    delToDo: () => this.delToDo(dataModel.id),
+                    editToDo: (input) => this.editToDo(dataModel.id, input)
+                }
+            }
+
             addToDo() {
-                var card = { id: crypto.randomUUID(), content: content };
+                var card = this.createViewModel({ id: crypto.randomUUID(), content: Constants.ContentText });
 
                 var cardElement = this.renderComp.renderCard(card);
-                var btnDel = cardElement.querySelector('button');
-                var that = this;
-                btnDel.onclick = function () {
-                    that.delToDo(card.id);
-                }
-                var inputEl = cardElement.querySelector('input');
-                    inputEl.onkeypress = function (e) {
-                        that.editToDo(e, card.id);
-                    }
+
                 this.cards.push(card)
                 this.localStorage.save(this.cards);
             }
 
             delToDo(cardId) {
-                var cardElement = document.getElementById(cardId);
-                var todoList = document.getElementById("todoList");
+                
                 //last card don't delete, only clear content
-                if (todoList.querySelectorAll('div').length == 1) {
-                    var contentEl = cardElement.querySelector('label');
-                    if (contentEl.innerHTML != content)
-                        contentEl.innerHTML = content;
+                if (this.cards.length == 1) {
+                    this.cards[0].content = Constants.ContentText;
+                    this.localStorage.save(this.cards);
                     return false;
                 }
-
-                todoList.removeChild(cardElement);
 
                 var indx = this.cards.findIndex(card => card.id == cardId);
                 this.cards.splice(indx, 1)
@@ -183,34 +176,22 @@
                 return true;
             }
 
-            editToDo(e, cardId) {
-                //if press enter, text is saved in content
-                if (e.keyCode == 13) {
-                    var cardElement = document.getElementById(cardId);
-                    var inputEl = cardElement.querySelector('input');
-                    var inputText = inputEl.value;
+            editToDo(cardId, inputEl) {
+                //check on empty string
+                if (!this.validateInput(inputEl))
+                    return false;
 
-                    //check on empty string
-                    if (!this.validateInput(inputEl)) return false;
-
-                    var contentEl = cardElement.querySelector('label');
-
-                    contentEl.innerHTML = inputText;
-                    inputEl.value = "";
-
-                    var card = this.cards.find(card => card.id == cardId);
-                    // var indx = cards.indexOf(card);
-                    var indx = cards.findIndex(card => card.id == cardId);
-                    card.content = inputText;
-                    this.cards[indx] = card;
-                    this.localStorage.save(cards);
-                    return true;
-                }
+                var card = this.cards.find(card => card.id == cardId);
+                var indx = this.cards.findIndex(card => card.id == cardId);
+                card.content = inputEl.value;
+                this.cards[indx] = card;
+                this.localStorage.save(this.cards);
+                return true;
             }
+
             validateInput(inputEl) {
                 let inputValue = inputEl.value;
                 if (inputValue.trim() == "") {
-                    alert("input text can not be empty!");
                     return false;
                 }
 
@@ -219,23 +200,25 @@
 
             init() {
                 const btnAdd = document.getElementById('todo-button-add');
-                var that = this;
-                btnAdd.onclick = function () {
-                    that.addToDo();
-                }
+                btnAdd.onclick = () => this.addToDo();
+
                 const btnClear = document.getElementById('todo-button-clear');
-                btnClear.onclick = function () {
-                    that.cards = null;
-                    that.localStorage.clear();
+                btnClear.onclick = () => {
+                    this.cards = null;
+                    this.localStorage.clear();
                 }
 
-                this.cards = this.localStorage.get();
+                var savedCards = this.localStorage.get();
+                for (let i = 0; i < savedCards.length; i++) {
+                    const card = savedCards[i];
+                    this.cards[i] = this.createViewModel(card);
+                }
 
-                this.renderComp.renderCards(this.cards, this);
+                this.renderComp.renderCards(this.cards);
             }
         }
 
-        //Local Storage
+        // Local Storage
         class LocalStorageCompClass {
             constructor() {
                 this.localStorage = window.localStorage;
@@ -252,15 +235,17 @@
 
                 return cards;
             }
+
             save(cards) {
                 this.localStorage.setItem('cards', JSON.stringify(cards));
             }
+
             clear() {
                 this.localStorage.clear();
             }
         }
 
-        //Renderer
+        // Renderer
         class RenderCompClass {
             constructor(localStorageComp) {
                 this.localStorage = localStorageComp;
@@ -273,44 +258,48 @@
                 cardElement.setAttribute("class", "todo-card");
                 cardElement.setAttribute("id", card.id);
 
-                // cardElement.innerHTML = `<label class="label">${card.content}</label>
-                //     <input class="content" type="text" onkeypress="return editToDo(event, '${card.id}')"/>
-                //     <button>delete</button>`;
-
                 cardElement.innerHTML = `<label class="label">${card.content}</label>
                     <input class="content" type="text"/>
                     <button>delete</button>`;
 
-
                 todoList.appendChild(cardElement);
+
+                var btnDel = cardElement.querySelector('button');
+                var that = this;
+                btnDel.onclick = () => {
+                    var cardElement = document.getElementById(card.id);
+                    var todoList = document.getElementById("todoList");
+
+                    if (!card.delToDo()) {
+                        var contentEl = cardElement.querySelector('label');
+                        contentEl.innerText = card.content;
+                    }
+                    else {
+                        todoList.removeChild(cardElement);
+                    }
+                }
+
+                var inputEl = cardElement.querySelector('input');
+                inputEl.onkeypress = function (e) {
+                    if (e.keyCode == 13) {
+                        if (card.editToDo(this)) {
+                            var contentEl = cardElement.querySelector('label');
+
+                            contentEl.innerText = inputEl.value;
+                            inputEl.value = "";
+                        }
+                        else {
+                            alert("input text can not be empty!");
+                        }
+                    }
+                }
 
                 return cardElement;
             }
 
-            renderCards(cards, contr) {
-                //var cardElement;
-             
+            renderCards(cards) {
                 for (var i = 0; i < cards.length; i++) {
-                   var cardElement = this.renderCard(cards[i]);
-                    var btnDel = cardElement.querySelector('button');
-                   
-                    var id = cards[i].id; 
-                    cardElement.querySelector('button').onclick = function () {
-                        contr.delToDo(id);
-                    }
-
-                    // btnDel.onclick = function () {
-                    //     contr.delToDo(id);
-                    // }
-                    var inputEl = cardElement.querySelector('input');
-                    
-                    cardElement.querySelector('input').onkeypress = function (e) {
-                        contr.editToDo(e, id);
-                    }
-
-                    // inputEl.onkeypress = function (e) {
-                    //     contr.editToDo(e, id);
-                    // }
+                    this.renderCard(cards[i])
                 }
             }
 
